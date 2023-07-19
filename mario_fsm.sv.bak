@@ -1,0 +1,246 @@
+//FSM for Mario
+//Moore FSM
+//Dedicated to Mario's moving graphics
+
+
+// module mario_fsm ( input logic keycode, rev, jmp, 
+						
+				
+
+
+// );
+
+module mario_fsm (   input logic    Clk, 
+									Reset,
+                                    frame_clk
+																	
+				input logic[7:0]    keycode, 
+				input logic         in_air,
+				input logic         jmp_ctr,
+				input logic         ,
+				  
+				output logic        LD_MAR,
+									LD_MDR,
+									LD_IR,
+									LD_BEN,
+									LD_CC,
+									LD_REG,
+									LD_PC,
+									LD_LED, 
+									
+				output logic        GatePC,
+									GateMDR,
+									GateALU,
+									GateMARMUX,
+									
+				output logic [1:0]  PCMUX,
+				output logic        DRMUX,
+									SR1MUX,
+									SR2MUX,
+									ADDR1MUX,
+				output logic [1:0]  ADDR2MUX,
+									ALUK,
+				  
+				output logic        Mem_OE,
+									Mem_WE
+				);
+
+	enum logic [2:0] {  Idle,
+                        Restart, 
+						Run_Right, 
+						Run_Left, 
+						Jump,
+                        Fall,
+						Collide,
+                        Squat.
+                        Force_Fall  
+            }   State, Next_state;   // Internal state logic
+		
+	always_ff @ (posedge Clk)
+	begin
+		if (Restart) 
+			State <= Halted;
+		else 
+			State <= Next_state;
+	end
+    always_comb
+	begin 
+		// Default next state is staying at current state
+		Next_state = State;
+		
+        //Default Control Signals
+
+		jmp = 1'b0;
+		rev = 1'b0;
+		in_air = 1'b0;
+		dir = 1'b0;
+	    // Assign next state
+		unique case (State)
+			Idle : 
+			case (keycode)
+				8'h1A :                 // W
+					Next_state = Jump;
+				8'h04                   // A
+					Next_state = Accel_Right;
+                8'h22                   // S
+					Next_state = Squat;
+				8'h07                   // D
+					Next_state = Run_Left;
+
+			Accel_Right : 
+				Next_state = Const_Move_Right;
+			Const_Move_Right : 
+            if (/*velocity*/) begin
+                if : //change from a bit encoding to an input for velocity
+				    Next_state = Const_Move_Right;
+                else
+                    Next_state = Decelerate_Right;
+                //Running to the right, key is pressed, but velocity is 0;
+            end
+            Decelerate_Right :
+                    Next_state = Idle;
+            Squat : //dont move in any case
+                if(S not pressed)
+                    Next_state = Idle;
+                else()
+                    Next_state = Squat;
+            // Force_Fall :
+
+            Jump :
+
+            Double_Jump:
+
+            
+
+
+
+
+
+
+			// 	if (~Continue) 
+			// 		Next_state = PauseIR1;
+			// 	else 
+			// 		Next_state = PauseIR2;
+			//  : 
+			// 	if (Continue) 
+			// 		Next_state = PauseIR2;
+			// 	else 
+			// 		Next_state = S_18;
+			Run_Left :
+
+
+
+
+/*
+
+Internal Game Logic
+
+Jump:
+
+ - Only Jump when on an object, such as the ground or a block
+    - How will this be determined?
+        - We know the size of the blocks
+ - You can double jump when in the air, but you can't do this more than once
+    - This will be unconditional with respect to wether Mario is falling or not
+ - You accelerate with initial velocity until v = 0 (gravity), then decelerate downwards
+ - 
+
+
+
+*/
+			S_00 :
+				case (BEN)
+					1'b0 :
+						Next_state = S_18;
+					1'b1 :
+						Next_state = S_22;
+			S_04 :
+				Next_state = S_21;
+
+					default : 
+						Next_state = S_18;
+				endcase
+			S_01, S_05, S_09, S_27, S_16, S_21, S_12, S_22, : 
+				Next_state = S_18;
+
+
+			// You need to finish the rest of states.....
+
+			default : ;
+
+		endcase
+		
+		// Assign control signals based on current state
+		case (State)
+			Halted: ;
+			S_18 : 
+				begin 
+					GatePC = 1'b1;
+					LD_MAR = 1'b1;
+					PCMUX = 2'b00;
+					LD_PC = 1'b1;
+				end
+			S_33_1 : 
+				Mem_OE = 1'b1;
+			S_33_2 : 
+				begin 
+					Mem_OE = 1'b1;
+				end
+			S_33_3 : 
+				begin 
+					Mem_OE = 1'b1;
+					LD_MDR = 1'b1;
+				end
+			S_35 : 
+				begin 
+					GateMDR = 1'b1;
+					LD_IR = 1'b1;
+				end
+			PauseIR1: ;
+			PauseIR2: ;
+			S_32 : 
+				LD_BEN = 1'b1;
+			S_01 : 
+				begin 
+					SR2MUX = IR_5;
+					ALUK = 2'b00;
+					GateALU = 1'b1;
+					LD_REG = 1'b1;
+					// incomplete...
+				end
+			S_05 : 
+				begin 
+					
+				end
+			S_09 : 
+				begin 
+					
+				end
+			S_06 : 
+				begin 
+					
+				end
+			S_07 : 
+				begin 
+					
+				end
+			S_04 : 
+				begin 
+					
+				end
+			S_12 : 
+				begin 
+					
+				end
+			S_00 : 
+				begin 
+					
+				end
+			// You need to finish the rest of states.....
+			
+			default : ;
+		endcase
+	end 
+
+	
+endmodule

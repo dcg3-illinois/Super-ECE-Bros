@@ -1,0 +1,94 @@
+module  mario ( input Reset, frame_clk,
+					input [7:0] keycode,
+               output [9:0]  MarioX, MarioY, MarioXS, MarioYS );
+    
+    logic [9:0] Mario_X_Pos, Mario_X_Motion, Mario_Y_Pos, Mario_Y_Motion, Mario_Size;
+	 int counter = 0;
+	 
+    parameter [9:0] Mario_X_Center=320;  // Center position on the X axis
+    parameter [9:0] Mario_Y_Center=240;  // Center position on the Y axis
+    parameter [9:0] Mario_X_Min=0;       // Leftmost point on the X axis
+    parameter [9:0] Mario_X_Max=639;     // Rightmost point on the X axis
+    parameter [9:0] Mario_Y_Min=0;       // Topmost point on the Y axis
+    parameter [9:0] Mario_Y_Max=447;     // Bottommost point for Mario to go
+    parameter [9:0] Mario_X_Step=1;      // Step size on the X axis
+    parameter [9:0] Mario_Y_Step=1;      // Step size on the Y axis
+
+    assign Mario_XSize = 8;  // assigns the value 4 as a 10-digit binary number, ie "0000000100"
+	assign Mario_YSize = 16;
+   
+    always_ff @ (posedge Reset or posedge frame_clk )
+    begin: Move_Mario
+
+//        if (Reset)  // Asynchronous Reset
+//        begin 
+//            Mario_Y_Motion <= 10'd0; //Mario_Y_Step;
+//				Mario_X_Motion <= 10'd0; //Mario_X_Step;
+//				Mario_Y_Pos <= Mario_Y_Center;
+//				Mario_X_Pos <= Mario_X_Center;
+//        end
+		Mario_X_Motion <= 10'd0;
+		Mario_Y_Motion <= 10'd0;
+        // else 
+        begin 
+			if ( (Mario_Y_Pos + Mario_Size) >= Mario_Y_Max )  // Mario is at the bottom edge
+				Mario_Y_Motion <= 10'd0;  // stop him from falling through the floor
+					  
+			//  else if ( (Mario_Y_Pos - Mario_Size) <= Mario_Y_Min )  // Mario is at the top edge, BOUNCE!
+			// 	  Mario_Y_Motion <= Mario_Y_Step;
+					  
+			// else if ( (Mario_X_Pos + Mario_Size) >= Mario_X_Max )  // Mario is at the Right edge, BOUNCE!
+			// 	Mario_X_Motion <= (~ (Mario_X_Step) + 1'b1);  // 2's complement.
+					  
+			// else if ( (Mario_X_Pos - Mario_Size) <= Mario_X_Min )  // Mario is at the Left edge, BOUNCE!
+			// 	Mario_X_Motion <= Mario_X_Step;
+					  
+			else begin
+				Mario_Y_Motion <= -1; //Mario_Y_Motion;  // Mario is somewhere in the middle, don't bounce, just keep moving
+			end
+			begin 
+				//begin
+				case (keycode)
+					8'h04 : begin
+						Mario_X_Motion <= -1;//A
+					end
+								
+					8'h07 : begin
+									
+						Mario_X_Motion <= 1;//D
+					end
+	
+					// 8'h16 : begin
+
+				//         Mario_Y_Motion <= 1;//S
+					// end
+								
+					// 8'h1A : begin
+				//         Mario_Y_Motion <= -1;//W
+				// 		  Mario_X_Motion <= 0;
+			// 		 end	  
+					default: ;
+				endcase
+			end
+				 
+			counter = counter + 1;
+				 
+			if(counter === 100000)
+			begin
+				Mario_Y_Pos <= (Mario_Y_Pos + Mario_Y_Motion);  // Update Mario position
+				Mario_X_Pos <= (Mario_X_Pos + Mario_X_Motion);
+				counter = 0;
+			end      
+		end  
+    end
+       
+    assign MarioX = Mario_X_Pos;
+   
+    assign MarioY = Mario_Y_Pos;
+   
+    assign MarioXS = Mario_XSize;
+
+	assign MarioYS = Mario_YSize;
+    
+
+endmodule

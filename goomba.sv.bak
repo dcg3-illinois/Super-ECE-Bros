@@ -1,0 +1,213 @@
+module  goomba( input Reset, frame_clk,
+               output [9:0]  GoombaX, GoombaY, GoombaXS, GoombaYS,
+					output reverse);
+    
+   logic [9:0] Goomba_X_Pos, Goomba_X_Motion, Goomba_Y_Pos, Goomba_Y_Motion, Goomba_XSize, Goomba_YSize;
+	logic rev;
+	int counter = 0;
+	int frame_counter = 0;
+	logic in_air; 
+	int dir = 0;
+	logic jmp;
+	int up = 0;
+	int Velocity_Y = 20'h02000;
+	int Acceleration_Y = 20'h00200;
+	int frame_rate = 416667;
+	//algorithm
+	
+	/*
+	if touching color palette, 
+	
+	
+	
+	
+	
+	
+	
+	
+	*/
+    parameter [9:0] Goomba_X_Center=160;  // Center position on the X axis
+    parameter [9:0] Goomba_Y_Center=120;  // Center position on the Y axis
+    parameter [9:0] Goomba_X_Min=0;       // Leftmost point on the X axis
+    parameter [9:0] Goomba_X_Max=639;     // Rightmost point on the X axis
+    parameter [9:0] Goomba_Y_Min=0;       // Topmost point on the Y axis
+    parameter [9:0] Goomba_Y_Max=415;     // Bottommost point for Goomba to go
+    parameter [9:0] Goomba_X_Step=1;      // Step size on the X axis
+    parameter [9:0] Goomba_Y_Step=1;      // Step size on the Y axis
+
+   assign Goomba_XSize = 10'b0000010000;  // assigns the value 4 as a 10-digit binary number, ie "0000000100"
+	assign Goomba_YSize = 10'b0000010000;
+	assign reverse = rev;
+   
+    always_ff @ (posedge Reset or posedge frame_clk )
+    begin: Move_Goomba
+        if (Reset)  // Asynchronous Reset
+        begin 
+         Goomba_Y_Motion <= 10'd0; //Goomba_Y_Step;
+			Goomba_X_Motion <= 10'd0; //Goomba_X_Step;
+			Goomba_Y_Pos <= Goomba_Y_Center;
+			Goomba_X_Pos <= Goomba_X_Center;
+			rev <= 1'b0;
+			Velocity_Y <= 20'h02000;
+			Acceleration_Y <= 20'h00200;
+			up <= 0;
+        end
+		else begin //when youre not on the rising edge of reset, or basically just on the frame_clk
+			Goomba_Y_Motion <= 10'd0; //Goomba_Y_Step;
+			Goomba_X_Motion <= 10'd0; //Goomba_X_Step;
+			// automatically assume Goomba is in the air
+			//in_air <= 1;
+			rev <= rev;
+			
+			begin 
+				// horizontal movement
+				case (keycode)
+					8'h04 : begin
+						Goomba_X_Motion <= -1;//A
+						rev <= 1'b1;
+					end
+								
+					8'h07 : begin		
+						Goomba_X_Motion <= 1;//D
+						rev <= 1'b0;
+					end
+					
+					default: ;
+				endcase
+			end
+			
+			// if Goomba is in a jump and has reached max height, start moving down
+//			if(jmp && (Goomba_jump_init - Goomba_Y_Pos) >= 128) begin
+//				jmp <= 0;
+//			end
+			
+			counter <= counter + 1;
+			frame_counter <= frame_counter + 1;
+			
+			if(frame_counter === frame_rate) begin
+			
+
+//if Goomba is at the border, dont move.
+//				if(jmp && in_air) begin
+//					Goomba_Y_Pos <= Goomba_Y_Pos - Velocity_Y[19:12];
+//					Velocity_Y <= Velocity_Y - Acceleration_Y;  //update the velocity, accounting for gravity
+//				end
+//				else if(in_air) begin
+//					if((Goomba_Y_Pos + GoombaYS) >= Goomba_Y_Max) begin
+//						in_air <= 0;
+//						jmp <= 0;
+//						Velocity_Y <= 0;
+//					end
+//					else begin
+//						Goomba_Y_Pos <= Goomba_Y_Pos + 1;  //fall
+//					end
+//				end
+				
+				//on the ground code
+				if((Goomba_Y_Pos + GoombaYS) >= Goomba_Y_Max) begin
+					if(keycode === 8'h1A) begin
+						in_air <= 1;
+						jmp <= 1;
+						Velocity_Y <= 20'h06000;
+						Acceleration_Y <= 20'h00300;
+						up <= 1;
+					end
+					else begin
+						in_air <= 0;
+						jmp <= 0;
+						Velocity_Y <= 0;
+					end
+					Goomba_Y_Pos <= Goomba_Y_Max - GoombaYS;
+				end
+				else begin
+					in_air <= 1;
+				end
+				//in the air code
+				if (in_air) begin
+					if(up) begin
+						if (Velocity_Y === 0) begin
+							up <= 0;
+						end
+						else begin
+							Goomba_Y_Pos <= Goomba_Y_Pos - Velocity_Y[19:12];
+							Velocity_Y <= Velocity_Y - Acceleration_Y;
+						end
+						
+					end
+					else begin
+					
+						if (Velocity_Y > 20'h04000) begin					
+							Velocity_Y <= 20'h04000;
+						end
+						Goomba_Y_Pos <= Goomba_Y_Pos + Velocity_Y[19:12];
+						Velocity_Y <= Velocity_Y + Acceleration_Y;
+					end
+				end
+				
+//			
+//				if(in_air) begin
+//					if((Goomba_Y_Pos + GoombaYS) >= Goomba_Y_Max) begin
+//						in_air <= 0;
+//						jmp <= 0;
+//						if(keycode === 8'h1A) begin
+//							Goomba_jump_init <= Goomba_Y_Pos;
+//							jmp <= 1;
+//							in_air <= 1;
+//				
+//							Velocity_Y <= 20'h04000;  //initialy velocity
+//							Acceleration_Y <= 20'h00200;  //initial acceleration
+//						end 
+//					end
+//					if(jmp) begin
+//						Goomba_Y_Pos <= Goomba_Y_Pos - Velocity_Y[19:12];
+//						Velocity_Y <= Velocity_Y - Acceleration_Y;  //update the velocity, accounting for gravity
+//					end
+//					else if(in_air) begin
+//						Goomba_Y_Pos <= Goomba_Y_Pos + 1;
+//					end
+//					
+//						// check to see if Goomba has touched ground
+//				end
+				frame_counter <= 0;
+			end
+			// every 100,000 cycles we move Goomba
+			if(counter === 100000) begin
+//				if(in_air) begin
+//					if(jmp) begin
+//						Goomba_Y_Pos <= Goomba_Y_Pos - 1;
+//					end
+//					else if((Goomba_Y_Pos + GoombaYS) >= Goomba_Y_Max) begin
+//						in_air <= 0;
+//					end
+//					else begin
+//						Goomba_Y_Pos <= Goomba_Y_Pos + 1;
+//					end
+//					// check to see if Goomba has touched ground
+//					
+//				end
+				Goomba_X_Pos <= (Goomba_X_Pos + Goomba_X_Motion);
+				counter <= 0;
+			end
+			
+//			if(keycode === 8'h1A && !in_air) begin
+//				Goomba_jump_init <= Goomba_Y_Pos;
+//				jmp <= 1;
+//				in_air <= 1;
+//				
+//				Velocity_Y <= 20'h04000;  //initialy velocity
+//				Acceleration_Y <= 20'h00200;  //initial acceleration
+//			end 
+
+		end		
+    end
+       
+    assign GoombaX = Goomba_X_Pos;
+   
+    assign GoombaY = Goomba_Y_Pos;
+   
+    assign GoombaXS = Goomba_XSize;
+
+	assign GoombaYS = Goomba_YSize;
+    
+
+endmodule

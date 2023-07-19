@@ -1,0 +1,40 @@
+module screenfsm (   input logic    Clk, Reset, frame_clk,							
+				input logic[7:0]    keycode0, keycode1, 
+				output logic [19:0] x_Velocity, y_Velocity);
+
+    enum logic [2:0] {  TitleScreen, Game
+           }   State, Next_state;   // Internal state logic
+
+   
+	//////////////////////////////////// Move to the next state ////////////////////////////////////
+	always_ff @ (posedge frame_clk)
+	begin
+		if (Reset) 
+			State <= TitleScreen;
+		else 
+			State <= Next_state;
+	end
+
+	//////////////////////////////////// Determine next state ////////////////////////////////////
+   always_comb begin
+
+		Next_state = State;
+
+        unique case (State)
+				TitleScreen : begin
+					play = 1'b0;
+					if(keycode0 == 8'h28 || keycode1 == 8'h28)
+						Next_state = Game;
+				end
+				
+				Game : begin
+					Next_state = Game;
+					play = 1'b1;
+				end
+				
+            default : Next_state = TitleScreen;
+        endcase	  
+   end 
+
+	
+endmodule
